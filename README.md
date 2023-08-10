@@ -16,7 +16,7 @@ The content folder should include at least `index.md`, along with a folder named
 
 You can place other Markdown files directly in the content folder, or you can create folders as needed for organization (_just avoid naming them "imgs"_). Flea will automatically assist you in organizing the website structure.
 
-Have fun! Or [jump onto the manual](https://undr22.github.io/).
+Have fun! Or [jump onto the manual](https://undr22.github.io/programming/flea-doc.html).
 
 ---
 
