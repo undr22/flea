@@ -1,0 +1,149 @@
+body {
+  font-family: "PingFang SC", Verdana, sans-serif;
+  margin: auto;
+  padding: 20px;
+  max-width: 720px;
+  text-align: left;
+  background-color: #f4f7f9;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.6;
+  color: #39414e;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+strong,
+b {
+  color: #1f2a38;
+}
+
+a {
+  color: #0078d4;
+  text-decoration: none;
+}
+
+header a {
+  margin-right: 10px;
+  font-weight: bold;
+}
+
+table {
+  width: 100%;
+}
+
+img {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+}
+
+code {
+  font-family: "Fira Code", "Fira Mono", Menlo, Consolas, "DejaVu Sans Mono",
+    monospace;
+  margin: 0 2px;
+  background-color: #dee9f1;
+}
+
+pre code {
+  color: #222;
+  display: block;
+  padding: 20px;
+  white-space: pre-wrap;
+  font-size: 14px;
+  overflow-x: auto;
+}
+
+div.highlight pre {
+  background-color: initial;
+  color: initial;
+}
+
+div.highlight code {
+  background-color: unset;
+  color: unset;
+}
+
+blockquote {
+  border-left: 1px solid #999;
+  padding-left: 20px;
+  font-style: italic;
+}
+
+footer {
+  padding: 25px;
+  text-align: center;
+}
+
+footer a {
+  font-weight: bold;
+}
+
+span.date {
+  font-style: italic;
+}
+
+ul.page-list {
+  list-style-type: none;
+  padding: unset;
+}
+
+ul.page-list li {
+  display: flex;
+}
+
+ul.page-list li span {
+  flex: 0 0 130px;
+}
+
+ul.page-list li a:visited {
+  color: #6a4bcc;
+}
+
+ul.tags li.tag {
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+ul.tags li.tag ul {
+  font-weight: normal;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #1f2a38;
+    color: #f4f7f9;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  strong,
+  b {
+    color: #f0f3f5;
+  }
+
+  a {
+    color: #4da3ff;
+    text-decoration: none;
+  }
+
+  code {
+    background-color: #3c586a;
+  }
+
+  pre code {
+    color: #ddd;
+  }
+
+  ul.page-list li a:visited {
+    color: #8a4bcc;
+  }
+}

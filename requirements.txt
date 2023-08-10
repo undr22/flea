@@ -1,0 +1,2 @@
+mistune==3.0.1
+python_frontmatter==1.0.0
