@@ -223,6 +223,14 @@ def generate_site(
     tag_page_html = generate_tag_page(tag_dict, base_html)
     save_as_html_file(os.path.join(public_folder_path, "tags.html"), tag_page_html)
 
+    # generate 404 page
+    fof_html = base_html.replace("<main>", "<main><h1>404</h1>\n")
+    if os.path.exists(os.path.join(content_folder_path, "404.md")):
+        fof_html = parse_markdown_file(
+            os.path.join(content_folder_path, "404.md"), base_html
+        )
+    save_as_html_file(os.path.join(public_folder_path, "404.html"), fof_html)
+
 
 def generate_single_page(file_path, base_html):
     html = parse_markdown_file(file_path, base_html)
