@@ -252,7 +252,7 @@ def generate_single_page(file_path, base_html):
         tags_html = '<p class="tags"></p>'
         for tag in metadata["tags"]:
             tags_html = tags_html.replace(
-                "</p>", '<a href="/tags.html#{}"># {}</a>'.format(tag, tag)
+                "</p>", '<a href="/tags.html#{}"># {}</a></p>'.format(tag, tag)
             )
         html = html.replace("</main>", "<small>" + tags_html + "</small></main>")
     return html

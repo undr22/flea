@@ -74,6 +74,10 @@ blockquote {
   font-style: italic;
 }
 
+small p.tags a {
+  margin-right: 10px;
+}
+
 footer {
   padding: 25px;
   text-align: center;
