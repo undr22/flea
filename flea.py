@@ -1,9 +1,10 @@
+import argparse
+import datetime
 import json
 import os
 import re
 import shutil
 from collections import OrderedDict
-from datetime import datetime
 
 import frontmatter
 import mistune
@@ -20,361 +21,432 @@ def save_as_html_file(file_path, content):
         file.write(content)
 
 
-def read_config(content_folder_path):
-    config_path = os.path.join(content_folder_path, "config.json")
+def is_folder_empty_or_not_exists(folder_path):
+    if not os.path.exists(folder_path):
+        return True
+    if os.path.isdir(folder_path):
+        return not any(os.scandir(folder_path))
+    return False
+
+
+def read_config(src_folder_path):
+    config_path = os.path.join(src_folder_path, "config.json")
     if os.path.exists(config_path):
         with open(config_path, "r") as file:
-            config_data = json.load(file)
-        return config_data
+            config = json.load(file)
+        return config
     else:
-        return []
+        return {}
 
 
-def get_nav_struct(content_folder_path):
-    folder_list = []
-    file_list = []
+def get_folder_struct(folder_path, ignore_404=False):
+    folder_list, file_list = [], []
+    ignored_items = ["config.json", "index.md", "static", "imgs"]
+    if ignore_404:
+        ignored_items.append("404.md")
 
-    ignored_items = ["imgs", "index.md", "config.json"]
+    for item in os.listdir(folder_path):
+        if item not in ignored_items:
+            item_path = os.path.join(folder_path, item)
 
-    for item in os.listdir(content_folder_path):
-        if not item.startswith(".") and item not in ignored_items:
-            item_path = os.path.join(content_folder_path, item)
             if os.path.isdir(item_path):
-                folder_list.append(item_path)
-            elif os.path.isfile(item_path):
-                file_list.append(item_path)
+                folder_list.append(item)
+            if os.path.isfile(item_path) and item.endswith(".md"):
+                file_list.append(item)
 
-    return folder_list, file_list
-
-
-def read_base_html():
-    current_script_path = os.path.abspath(__file__)
-    base_html_file_path = os.path.join(
-        os.path.dirname(current_script_path), "static", "base.html"
-    )
-    return read_file(base_html_file_path)
+    return sorted(folder_list), sorted(file_list)
 
 
-def customize_base_html(base_html, config, folder_list, file_list):
-    if "lang" in config:
-        base_html = base_html.replace("en-US", config["lang"])
-    if "title" in config:
-        base_html = base_html.replace(">My Flea Site<", ">" + config["title"] + "<")
-    if "author" in config:
-        base_html = base_html.replace(
-            '<!-- <meta name="author" content=""> -->',
-            '<meta name="author" content="{}">'.format(config["author"]),
-        )
-    if "footer" in config:
-        base_html = base_html.replace("<!-- footer -->", config["footer"])
-    if "nav" in config:
-        base_html = base_html.replace(
-            "<!-- nav -->", generate_custom_nav(config["nav"])
-        )
-    else:
-        base_html = base_html.replace(
-            "<!-- nav -->", generate_default_nav(folder_list, file_list)
-        )
+def generate_base_html(src_folder_path, config, folder_list, file_list):
+    base_html = "<!DOCTYPE html>\n"
+    base_html += f'<html lang="{config.get("lang", "en-US")}">\n'
+    base_html += "<head>\n"
+    base_html += '<meta charset="utf-8" />\n'
+    base_html += '<meta name="viewport" content="width=device-width, initial-scale=1.0" />\n'  # fmt: skip
+    base_html += "<!-- flea-description -->\n"
+    base_html += f'<meta name="author" content="{config.get("author","anonymous")}">\n'
+    base_html += generate_favicon_html(config)
+    base_html += generate_style_html(config)
+    base_html += f'<title>{config.get("title","My Flea Site")}</title>\n'
+    base_html += generate_script_html(config)
+    base_html += "</head>\n"
+    base_html += "<body>\n"
+    base_html += "<header>\n"
+    base_html += f'<h2>{config.get("title","My Flea Site")}</h2>\n'
+    base_html += generate_nav_html(src_folder_path, config, folder_list, file_list)
+    base_html += "</header>\n"
+    base_html += "<main><!-- flea-main --><!-- flea-list --><!-- flea-tags --></main>\n"
+    base_html += f'<footer>{config["footer"]}</footer>' if "footer" in config else ""
+    base_html += "</body>"
+    base_html += "</html>"
+
     return base_html
 
 
-def generate_custom_nav(markdown_nav_list):
+def generate_favicon_html(config):
+    favicon_html = ""
+
+    disable_default_favicon = config.get("disable_default_favicon", False)
+    if not disable_default_favicon:
+        for size in [16, 32, 96]:
+            favicon_html += f'<link rel="icon" type="image/png" href="/static/flea-favicon-{size}.png" sizes="{size}x{size}" />\n'
+
+    favicons = config.get("favicons", [])
+    for favicon in favicons:
+        if favicon.startswith('<link rel="icon"'):
+            favicon_html += favicon + "\n"
+
+    return favicon_html
+
+
+def generate_style_html(config):
+    style_html = ""
+
+    disable_default_style = config.get("disable_default_style", False)
+    if not disable_default_style:
+        style_html += '<link rel="stylesheet" type="text/css" href="/static/flea-style.css" />\n'  # fmt: skip
+
+    styles = config.get("styles", [])
+    for style in styles:
+        if style.startswith('<link rel="stylesheet"'):
+            style_html += style + "\n"
+        else:
+            style_html += f'<link rel="stylesheet" type="text/css" href="{style}" />\n'
+
+    return style_html
+
+
+def generate_script_html(config):
+    script_html = ""
+
+    scripts = config.get("scripts", [])
+    for script in scripts:
+        if script.startswith("<script"):
+            script_html += script + "\n"
+        else:
+            script_html += f'<script src="{script}"></script>\n'
+
+    return script_html
+
+
+def generate_nav_html(src_folder_path, config, folder_list, file_list):
     nav_html = ""
-    for markdown_link in markdown_nav_list:
-        nav_html += parse_markdown_link(markdown_link)
-    return nav_html
 
+    nav = config.get("nav", [])
+    if nav:
+        for item in nav:
+            nav_html += mistune.html(item)[3:-5] + "\n"
+    else:
+        nav_html += '<a href="/">Home</a>\n'
 
-def parse_markdown_link(link):
-    return mistune.html(link)[3:-5] + "\n"
+        for folder in folder_list:
+            folder_name = folder
 
+            url = "/" + folder_name
+            title = folder_name
+            nav_html += f'<a href="{url}">{title}</a>\n'
 
-def generate_default_nav(folder_list, file_list):
-    folder_list.sort()
-    file_list.sort()
+        for file in file_list:
+            file_name = os.path.splitext(file)[0]
+            file_path = os.path.join(src_folder_path, file)
+            metadata = frontmatter.loads(read_file(file_path)).metadata
 
-    nav_html = '<a href="/">Home</a>\n'
-
-    for folder in folder_list:
-        folder_name = folder.split("/")[-1]
-        url = "/" + folder_name
-        title = folder_name
-        nav_html += '<a href="{}">{}</a>\n'.format(url, title)
-
-    for file in file_list:
-        file_name = file.split("/")[-1]
-        url = "/" + os.path.splitext(file_name)[0] + ".html"
-        title = file_name.split(".")[0]
-        metadata = read_metadata(file)
-        if "title" in metadata:
-            title = metadata["title"]
-        nav_html += '<a href="{}">{}</a>\n'.format(url, title)
+            url = "/" + file_name + ".html"
+            title = metadata.get("title", file_name)
+            nav_html += f'<a href="{url}">{title}</a>\n'
 
     return nav_html
 
 
-def read_metadata(markdown_file_path):
-    markdown_content = read_file(markdown_file_path)
-    post = frontmatter.loads(markdown_content)
-    return post.metadata
+def init_dst_folder(src_folder_path, dst_folder_path, config):
+    if os.path.exists(dst_folder_path):
+        shutil.rmtree(dst_folder_path)
+    os.mkdir(dst_folder_path)
 
+    flea_abs_path = os.path.abspath(os.path.dirname(__file__))
 
-def parse_markdown_file(file_path, base_html):
-    markdown_content = read_file(file_path)
-    post = frontmatter.loads(markdown_content)
+    src_static_path = os.path.join(src_folder_path, "static")
+    dst_static_path = os.path.join(dst_folder_path, "static")
 
-    parser = mistune.create_markdown(
-        plugins=["strikethrough", "footnotes", "table", "task_lists"]
-    )
-    main_html = parser(post.content)
+    src_imgs_path = os.path.join(src_folder_path, "imgs")
+    dst_imgs_path = os.path.join(dst_folder_path, "imgs")
 
-    html = base_html.replace("<!-- main -->", main_html)
+    if not is_folder_empty_or_not_exists(src_static_path):
+        shutil.copytree(src_static_path, dst_static_path)
 
-    return html
+    if not os.path.exists(dst_static_path):
+        os.mkdir(dst_static_path)
 
-
-# WARNING! This function will first REMOVE public_folder_path!
-def generate_site(
-    base_html, content_folder_path, public_folder_path, folder_list, file_list
-):
-    # generate public folder, copy style & imgs
-    os.makedirs(public_folder_path)
-
-    script_absolute_path = os.path.abspath(__file__)
-    flea_absolute_path = os.path.dirname(script_absolute_path)
-
-    shutil.copytree(
-        os.path.join(flea_absolute_path, "static"),
-        os.path.join(public_folder_path, "static"),
-    )
-
-    shutil.copytree(
-        os.path.join(content_folder_path, "imgs"),
-        os.path.join(public_folder_path, "imgs"),
-    )
-
-    # generate index.html
-    save_as_html_file(
-        os.path.join(public_folder_path, "index.html"),
-        parse_markdown_file(os.path.join(content_folder_path, "index.md"), base_html),
-    )
-
-    # tag_dict
-    tag_dict = {}
-
-    # generate outter pages
-    for file in file_list:
-        file_name = file.split("/")[-1]
-        html_path = os.path.join(
-            public_folder_path, os.path.splitext(file_name)[0] + ".html"
-        )
-        html = generate_single_page(file, base_html)
-        save_as_html_file(html_path, html)
-
-        metadata = read_metadata(file)
-        if "tags" in metadata:
-            date = datetime(1970, 1, 1).date()
-            if "date" in metadata:
-                date = metadata["date"]
-            title = os.path.splitext(file_name)[0]
-            if "title" in metadata:
-                title = metadata["title"]
-            update_tag_dict(
-                tag_dict,
-                metadata["tags"],
-                [date, title, "/" + html_path.split("/")[-1]],
+    disable_default_favicon = config.get("disable_default_favicon", False)
+    if not disable_default_favicon:
+        for size in [16, 32, 96]:
+            shutil.copy2(
+                os.path.join(flea_abs_path, f"static/flea-favicon-{size}.png"),
+                dst_static_path,
             )
 
-    # generate folders & inner pages
-    for folder in folder_list:
-        folder_name = folder.split("/")[-1]
-        os.makedirs(os.path.join(public_folder_path, folder_name))
+    disable_default_style = config.get("disable_default_style", False)
+    if not disable_default_style:
+        shutil.copy2(
+            os.path.join(flea_abs_path, "static/flea-style.css"), dst_static_path
+        )
 
+    if not is_folder_empty_or_not_exists(src_imgs_path):
+        shutil.copytree(src_imgs_path, dst_imgs_path)
+
+
+def generate_site(src_folder_path, dst_folder_path, config, base_html, folder_list, file_list):  # fmt: skip
+    parser = get_parser()
+    tags_info = {}
+
+    generate_index_page(src_folder_path, dst_folder_path, base_html, parser)
+    generate_404_page(src_folder_path, dst_folder_path, base_html, parser)
+    generate_outer_pages(src_folder_path, dst_folder_path, base_html, parser, file_list, tags_info)  # fmt: skip
+    generate_inner_pages(src_folder_path, dst_folder_path, config, base_html, parser, folder_list, tags_info)  # fmt: skip
+    generate_tags_page(dst_folder_path, base_html, tags_info)
+
+
+def generate_index_page(src_folder_path, dst_folder_path, base_html, parser):
+    index_file_path = os.path.join(src_folder_path, "index.md")
+    index_html_path = os.path.join(dst_folder_path, "index.html")
+
+    index_page = parse_md_file(base_html, index_file_path, parser, ignore_metadata=True)
+
+    save_as_html_file(index_html_path, index_page)
+
+
+def generate_404_page(src_folder_path, dst_folder_path, base_html, parser):
+    _404_file_path = os.path.join(src_folder_path, "404.md")
+    _404_html_path = os.path.join(dst_folder_path, "404.html")
+
+    _404_base_html = re.sub(r"<title>.*?</title>", "<title>404</title>", base_html)
+    _404_base_html = _404_base_html.replace("<main>", "<main><h1>404</h1>")
+
+    _404_page = _404_base_html
+    if os.path.exists(_404_file_path):
+        _404_page = parse_md_file(_404_base_html, _404_file_path, parser, ignore_metadata=True)  # fmt: skip
+
+    save_as_html_file(_404_html_path, _404_page)
+
+
+def generate_outer_pages(src_folder_path, dst_folder_path, base_html, parser, file_list, tags_info):  # fmt: skip
+    for file in file_list:
+        file_path = os.path.join(src_folder_path, file)
+        file_name = os.path.splitext(file)[0]
+        url = "/" + file_name + ".html"
+        html_path = os.path.join(dst_folder_path, file_name + ".html")
+
+        page, tags, date, title = parse_md_file(base_html, file_path, parser)
+
+        save_as_html_file(html_path, page)
+        update_tags_info(tags_info, tags, [date, title if title else file_name, url])
+
+
+def generate_inner_pages(src_folder_path, dst_folder_path, config, base_html, parser, folder_list, tags_info):  # fmt: skip
+    custom_nav = config.get("nav", [])
+
+    for folder in folder_list:
+        src_subfolder_path = os.path.join(src_folder_path, folder)
+        dst_subfolder_path = os.path.join(dst_folder_path, folder)
+        os.mkdir(dst_subfolder_path)
+
+        folder_name = os.path.basename(folder)
         title = folder_name
-        config = read_config(content_folder_path)
-        if "nav" in config:
-            for item in config["nav"]:
+        if custom_nav:
+            for item in custom_nav:
                 match = re.search(r"\[(.*?)\]\((.*?)\)", item)
                 if match:
-                    text = match.group(1)
-                    link = match.group(2)
+                    custom_title, custom_url = match.group(1), match.group(2)
+                    title = custom_title if custom_url == "/" + folder_name else title
 
-                    if link == "/" + folder_name:
-                        title = text
+        inner_index_page = re.sub(r"<title>.*?</title>", f"<title>{title}</title>", base_html)  # fmt: skip
+        inner_index_page = inner_index_page.replace("<main>", f"<main><h1>{folder_name}/</h1>")  # fmt: skip
 
-        index_path = os.path.join(folder, "index.md")
-        if os.path.exists(index_path):
-            html = parse_markdown_file(index_path, base_html)
-        else:
-            html = base_html
-        html = re.sub(r"<title>.*?</title>", "<title>{}</title>".format(title), html)
+        inner_index_file_path = os.path.join(src_subfolder_path, "index.md")
+        if os.path.exists(inner_index_file_path):
+            inner_index_page = parse_md_file(inner_index_page, inner_index_file_path, parser, ignore_metadata=True)  # fmt: skip
 
-        page_list_html = generate_page_list(
-            base_html, content_folder_path, public_folder_path, folder, tag_dict
-        )
-        html = html.replace("<!-- list -->", page_list_html)
-        html = html.replace("<main>", "<main><h1>{}/</h1>".format(folder_name))
+        _, inner_file_list = get_folder_struct(src_subfolder_path)
+        inner_page_info_list = []
+        for file in inner_file_list:
+            file_path = os.path.join(src_subfolder_path, file)
+            file_name = os.path.splitext(file)[0]
+            url = "/" + folder_name + "/" + file_name + ".html"
+            html_path = os.path.join(dst_subfolder_path, file_name + ".html")
 
-        save_as_html_file(
-            os.path.join(public_folder_path, folder_name, "index.html"), html
-        )
+            page, tags, date, title = parse_md_file(base_html, file_path, parser)
 
-    # generate tag page
-    tag_page_html = generate_tag_page(tag_dict, base_html)
-    save_as_html_file(os.path.join(public_folder_path, "tags.html"), tag_page_html)
+            save_as_html_file(html_path, page)
+            update_tags_info(tags_info, tags, [date, title if title else folder_name + "/" + file_name, url])  # fmt: skip
+            inner_page_info_list.append([date, title if title else file_name, url])  # fmt: skip
+        inner_page_info_list.sort(key=lambda item: item[0], reverse=True)
 
-    # generate 404 page
-    fof_html = base_html.replace("<main>", "<main><h1>404</h1>\n")
-    if os.path.exists(os.path.join(content_folder_path, "404.md")):
-        fof_html = parse_markdown_file(
-            os.path.join(content_folder_path, "404.md"), base_html
-        )
-    save_as_html_file(os.path.join(public_folder_path, "404.html"), fof_html)
+        inner_page_list_html = '<ul class="page-list">\n'
+        for page_info in inner_page_info_list:
+            inner_page_list_html += "<li>\n"
+            inner_page_list_html += f'<span class="date">{page_info[0].date()}</span>\n'
+            inner_page_list_html += f'<a href="{page_info[2]}">{page_info[1]}</a>\n'
+            inner_page_list_html += "</li>\n"
+        inner_page_list_html += "</ul>"
 
+        inner_index_page = inner_index_page.replace('<!-- flea-list -->', inner_page_list_html)  # fmt: skip
 
-def generate_single_page(file_path, base_html):
-    html = parse_markdown_file(file_path, base_html)
-
-    metadata = read_metadata(file_path)
-    if "date" in metadata:
-        html = html.replace(
-            "<main>",
-            '<main><span class="date"><p>{}</p></span>'.format(metadata["date"]),
-        )
-    if "title" in metadata:
-        html = re.sub(
-            r"<title>.*?</title>",
-            "<title>{}</title>".format(metadata["title"]),
-            html,
-        )
-        html = html.replace("<main>", "<main><h1>{}</h1>".format(metadata["title"]))
-    if "tags" in metadata:
-        tags_html = '<p class="tags"></p>'
-        for tag in metadata["tags"]:
-            tags_html = tags_html.replace(
-                "</p>", '<a href="/tags.html#{}"># {}</a></p>'.format(tag, tag)
-            )
-        html = html.replace("</main>", "<small>" + tags_html + "</small></main>")
-    return html
+        save_as_html_file(os.path.join(dst_subfolder_path, "index.html"), inner_index_page)  # fmt: skip
 
 
-def update_tag_dict(tag_dict, tags, page_info):
-    for tag in tags:
-        if tag not in tag_dict:
-            page_info_list = [page_info]
-            tag_dict[tag] = page_info_list
-        else:
-            tag_dict[tag].append(page_info)
+def generate_tags_page(dst_folder_path, base_html, tags_info):
+    tags_html_path = os.path.join(dst_folder_path, "tags.html")
 
-
-def generate_page_list(
-    base_html, content_folder_path, public_folder_path, folder_path, tag_dict
-):
-    file_list = []
-    for item in os.listdir(folder_path):
-        if not item.startswith(".") and item != "index.md":
-            item_path = os.path.join(folder_path, item)
-            if os.path.isfile(item_path):
-                file_list.append(item_path)
-
-    page_info_list = []
-    for file in file_list:
-        metadata = read_metadata(file)
-        date = datetime(1970, 1, 1).date()
-        if "date" in metadata:
-            date = metadata["date"]
-        title = os.path.splitext(os.path.basename(file))[0]
-        if "title" in metadata:
-            title = metadata["title"]
-
-        file_base_name = file.split("/")[-2] + "/" + file.split("/")[-1].split(".")[0]
-        save_as_html_file(
-            os.path.join(public_folder_path, file_base_name + ".html"),
-            generate_single_page(
-                os.path.join(content_folder_path, file_base_name + ".md"), base_html
-            ),
-        )
-        url = "/" + file_base_name + ".html"
-
-        if "tags" in metadata:
-            update_tag_dict(tag_dict, metadata["tags"], [date, title, url])
-
-        page_info_list.append([date, title, url])
-    page_info_list = sorted(page_info_list, key=lambda item: item[0], reverse=True)
-
-    page_info_list_html = ""
-    for page_info in page_info_list:
-        page_info_list_html += "<li>\n"
-        page_info_list_html += '<span class="date">{}</span>\n'.format(page_info[0])
-        page_info_list_html += '<a href="{}">{}</a>\n'.format(
-            page_info[2], page_info[1]
-        )
-        page_info_list_html += "</li>\n"
-    page_info_list_html = '<ul class="page-list">\n' + page_info_list_html + "</ul>"
-
-    return page_info_list_html
-
-
-def generate_tag_page(tag_dict, base_html):
-    ordered_tag_dict = OrderedDict()
-    for tag, page_info_list in tag_dict.items():
-        ordered_tag_dict[tag] = sorted(
+    ordered_tags_info = OrderedDict()
+    for tag, page_info_list in tags_info.items():
+        ordered_tags_info[tag] = sorted(
             page_info_list, key=lambda item: item[0], reverse=True
         )
-    ordered_tag_dict = OrderedDict(
-        sorted(ordered_tag_dict.items(), key=lambda item: item[1][0][0], reverse=True)
+    ordered_tags_info = OrderedDict(
+        sorted(ordered_tags_info.items(), key=lambda item: item[1][0][0], reverse=True)
     )
 
     tag_list_html = ""
-    for tag, page_info_list in ordered_tag_dict.items():
+    for tag, page_info_list in ordered_tags_info.items():
         single_tag_html = ""
         for page_info in page_info_list:
             single_tag_html += "<li>\n"
-            single_tag_html += '<span class="date">{}</span>\n'.format(page_info[0])
-            single_tag_html += '<a href="{}">{}</a>\n'.format(
-                page_info[2], page_info[1]
-            )
+            single_tag_html += f'<span class="date">{page_info[0].date()}</span>\n'
+            single_tag_html += f'<a href="{page_info[2]}">{page_info[1]}</a>\n'
             single_tag_html += "</li>\n"
         single_tag_html = (
-            '<li class="tag" id="{}">{}<ul class="page-list">\n'.format(tag, tag)
+            f'<li class="tag" id="{tag}">{tag}<ul class="page-list">\n'
             + single_tag_html
             + "</ul></li>\n"
         )
         tag_list_html += single_tag_html
     tag_list_html = '<h1>Tags</h1>\n<ul class="tags">\n' + tag_list_html + "</ul>"
 
-    tag_page_html = base_html.replace("<!-- main -->", tag_list_html)
-    tag_page_html = re.sub(r"<title>.*?</title>", "<title>Tags</title>", tag_page_html)
+    tags_page = re.sub(r"<title>.*?</title>", "<title>Tags</title>", base_html)
+    tags_page = tags_page.replace("<!-- flea-list -->", tag_list_html)
 
-    return tag_page_html
+    save_as_html_file(tags_html_path, tags_page)
 
 
-def main(content_folder_path, public_folder_path):
-    config = read_config(content_folder_path)
-    folder_list, file_list = get_nav_struct(content_folder_path)
+def get_parser():
+    class CustomRenderer(mistune.HTMLRenderer):
+        def image(self, alt, url, title=None):
+            img_html = f'<img src="{url}" alt="{alt}" />'
+            if title:
+                if title.endswith(", pano"):
+                    img_html = f'<img class="pano" src="{url}" alt="{alt}" />'
+                    title = title.rstrip(", pano")
+                img_html += f'<span class="image-title">{title}</span>'
+            return img_html
 
-    base_html = read_base_html()
-    base_html = customize_base_html(base_html, config, folder_list, file_list)
+    plugins = [
+        "strikethrough",
+        "footnotes",
+        "table",
+        "task_lists",
+        "mark",
+        "superscript",
+        "subscript",
+    ]
 
-    if os.path.exists(public_folder_path):
-        shutil.rmtree(public_folder_path)
+    parser = mistune.create_markdown(renderer=CustomRenderer(), plugins=plugins)
 
-    # WARNING! This function will first REMOVE public_folder_path!
-    generate_site(
-        base_html, content_folder_path, public_folder_path, folder_list, file_list
+    return parser
+
+
+def parse_md_file(base_html, file_path, parser, ignore_metadata=False):
+    post = frontmatter.loads(read_file(file_path))
+    metadata, content = post.metadata, post.content
+
+    html = base_html.replace("<!-- flea-main -->", parser(content))
+
+    if not ignore_metadata:
+        tags = metadata.get("tags", [])
+        if tags:
+            tags_html = '<small><p class="tags">\n'
+            for tag in tags:
+                tags_html += f'<a href="/tags.html#{tag}"># {tag}</a>\n'
+            tags_html += "</p></small>"
+
+            html = html.replace("<!-- flea-tags -->", tags_html)
+
+        date = metadata.get("date", datetime.datetime(1970, 1, 1))
+        if isinstance(date, datetime.date):
+            date = datetime.datetime.combine(date, datetime.time())
+        if date != datetime.datetime(1970, 1, 1):
+            html = html.replace("<main>", f'<main><span class="date"><p>{date.date()}</p></span>')  # fmt: skip
+
+        title = metadata.get("title", "")
+        if title:
+            html = re.sub(r"<title>.*?</title>", f"<title>{title}</title>", html)
+            html = html.replace("<main>", f"<main><h1>{title}</h1>")
+
+        return html, tags, date, title
+
+    return html
+
+
+def update_tags_info(tags_info, tags, page_info):
+    for tag in tags:
+        if tag not in tags_info:
+            page_info_list = [page_info]
+            tags_info[tag] = page_info_list
+        else:
+            tags_info[tag].append(page_info)
+
+
+def flea(src_folder_path, dst_folder_path):
+    config = read_config(src_folder_path)
+    folder_list, file_list = get_folder_struct(src_folder_path, ignore_404=True)
+    base_html = generate_base_html(src_folder_path, config, folder_list, file_list)
+    init_dst_folder(src_folder_path, dst_folder_path, config)
+    generate_site(src_folder_path, dst_folder_path, config, base_html, folder_list, file_list)  # fmt: skip
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Generate a static website from Markdown files.", add_help=False
     )
+
+    parser.add_argument(
+        "-h", "--help", action="store_true", help="Show help message and exit."
+    )
+    parser.add_argument(
+        "-s",
+        "--source",
+        type=str,
+        default=os.path.join(os.path.dirname(__file__), "content"),
+    )
+    parser.add_argument(
+        "-d",
+        "--destination",
+        type=str,
+        default=os.path.join(os.path.dirname(__file__), "flea-site"),
+    )
+
+    args = parser.parse_args()
+
+    if args.help:
+        custom_help_message = "Flea - Generate a Static Website from Markdown Files\n\n"  # fmt: skip
+        custom_help_message += "Usage:\n"
+        custom_help_message += "  python flea.py [-h] [-s SOURCE] [-d DESTINATION]\n\n"
+        custom_help_message += "Options:\n"
+        custom_help_message += "  -h, --help         Show this help message and exit.\n"
+        custom_help_message += "  -s, --source  SOURCE\n"  # fmt: skip
+        custom_help_message += "                     Path to the source folder containing Markdown files.\n"  # fmt: skip
+        custom_help_message += "  -d, --destination DESTINATION\n"  # fmt: skip
+        custom_help_message += "                     Path to the destination folder as the root of the\n"  # fmt: skip
+        custom_help_message += "                     generated site.\n"
+        custom_help_message += "                     \033[91mWARNING: The destination folder will be REMOVED before\n"  # fmt: skip
+        custom_help_message += "                     generating the site.\033[0m"  # fmt: skip
+
+        print(custom_help_message)
+    else:
+        src_folder_path = args.source
+        dst_folder_path = args.destination
+
+        flea(src_folder_path, dst_folder_path)
 
 
 if __name__ == "__main__":
-    import os
-    import sys
-
-    if len(sys.argv) != 2:
-        print("Usage: python path_to_flea.py content_folder_path")
-        sys.exit(1)
-
-    content_folder_path = sys.argv[1]
-
-    flea_abs_path = os.path.dirname(os.path.abspath(__file__))
-
-    main(content_folder_path, os.path.join(flea_abs_path, "flea-site"))
+    main()

@@ -1,0 +1,151 @@
+body {
+  max-width: 720px;
+  margin: auto;
+  padding: 20px;
+  overflow-wrap: break-word;
+  text-align: left;
+  font-family: "PingFang SC", Verdana, sans-serif;
+  line-height: 1.6;
+  background-color: white;
+  color: black;
+}
+
+a {
+  color: dodgerblue;
+  text-decoration: none;
+}
+
+header a {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+img {
+  display: block;
+  margin: auto;
+  max-width: 100%;
+}
+
+@media (min-width: 1040px) {
+  img.pano {
+    max-width: none;
+    width: 1000px;
+    margin-left: -140px;
+  }
+}
+
+span.image-title {
+  display: block;
+  margin: 5px 5px 0 0;
+  text-align: right;
+  color: gray;
+  font-style: italic;
+}
+
+table {
+  min-width: 50%;
+  max-width: 100%;
+  margin: auto;
+}
+
+mark {
+  background-color: lemonchiffon;
+  padding: 0 5px;
+  border-radius: 5px;
+}
+
+code {
+  font-family: Menlo, Monaco, "Courier New", monospace;
+  font-size: smaller;
+  background-color: rgba(211, 211, 211, 0.65);
+  margin: 0 2px;
+  border-radius: 2px;
+}
+
+pre code {
+  display: block;
+  background-color: whitesmoke;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+blockquote {
+  border-left: 2px solid lightgray;
+  padding-left: 20px;
+  font-style: italic;
+}
+
+small p.tags a {
+  margin-right: 10px;
+}
+
+footer {
+  text-align: center;
+  padding: 20px;
+}
+
+footer a {
+  font-weight: bold;
+}
+
+span.date {
+  font-style: italic;
+  color: dimgray;
+  font-family: Menlo, Monaco, "Courier New", monospace;
+}
+
+ul.page-list {
+  list-style-type: none;
+  padding: unset;
+}
+
+ul.page-list li {
+  display: flex;
+}
+
+ul.page-list li span {
+  flex: 0 0 130px;
+}
+
+ul.page-list li a:visited {
+  color: mediumpurple;
+}
+
+ul.tags li.tag {
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+ul.tags li.tag ul {
+  font-weight: normal;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #323232;
+    color: lightgray;
+  }
+
+  a {
+    color: lightblue;
+  }
+
+  mark {
+    color: lightgray;
+    background-color: darkgoldenrod;
+  }
+
+  code {
+    background-color: #646464;
+  }
+
+  pre code {
+    background-color: #646464;
+  }
+
+  ul.page-list li a:visited {
+    color: plum;
+  }
+}
