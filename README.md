@@ -22,8 +22,8 @@ Flea is a static website generator that aims to streamline the process of creati
 
 ## Features
 
-- **Easy Website Generation:** Flea simplifies turning content into a website with a single click.
-- **Customization:** Customize website details like title, author, icons, navigation, and more.
+- **Easy Website Generation:** Flea simplifies turning content into a website with a single command.
+- **Customization:** Customize website details like title, author, icons, navigation bar, and more.
 - **External Styles and Scripts:** Easily add external CSS and JavaScript to enhance your site.
 
 ## Getting Started
@@ -180,3 +180,7 @@ A possible example:
 ## License
 
 Flea is open-source software released under the [MIT License](https://opensource.org/licenses/MIT).
+
+---
+
+[Flea](https://icons8.com/icon/F2ynpEa6aUZd/fleaFlea) icon by [Icons8](https://icons8.com)
