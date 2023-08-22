@@ -125,10 +125,10 @@ Flea expects a specific folder structure for your website content like this：
 ├── static                - Optional, used for static files, must be named exactly "static"
 │   └── code-style.css
 │   └── my_script.js
-├── blog                  - Outer directory included in the navigation bar
+├── blog                  - Outer directory, included in the navigation bar
 │   ├── my-back-itches.md
 │   └── go-see-a-doctor.md
-└── about.md              - Outer file included in the navigation bar, excluding 404.md
+├── about.md              - Outer file, included in the navigation bar, excluding 404.md
 └── 404.md                - Used for generating the 404 page
 ```
 
