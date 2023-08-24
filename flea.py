@@ -333,9 +333,14 @@ def get_parser():
         def image(self, alt, url, title=None):
             img_html = f'<img src="{url}" alt="{alt}" />'
             if title:
+                if title.endswith(", fit"):
+                    img_html = f'<img class="fit" src="{url}" alt="{alt}" />'
+                    title = title.rstrip(", fit")
+
                 if title.endswith(", pano"):
                     img_html = f'<img class="pano" src="{url}" alt="{alt}" />'
                     title = title.rstrip(", pano")
+
                 img_html += f'<span class="image-title">{title}</span>'
             return img_html
 

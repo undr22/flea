@@ -26,6 +26,10 @@ img {
   max-width: 100%;
 }
 
+img.fit {
+  max-height: 720px;
+}
+
 @media (min-width: 1040px) {
   img.pano {
     max-width: none;

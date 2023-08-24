@@ -78,7 +78,7 @@ Flea also supports a special syntax for writing image links. You can use it as f
 
 The `title` will be enclosed in a `<span class="image-title"></span>` tag and rendered.
 
-If the `title` ends with ", pano", such as:
+And if the `title` ends with ", fit" or ", pano", the image will be rendered with a special class name, like:
 
 ```
 ![alt](url "title, pano")
@@ -90,7 +90,7 @@ It will be rendered as:
 <img class="pano" src="url" alt="alt" /><span class="image-title">title</span>
 ```
 
-Under the default style, panoramic (pano) images will extend beyond the page width.
+Under the default style, "fit" images will be restricted to a maximum height of 720px, "pano" images will extend beyond the page width (if possible).
 
 In the beginning of a Markdown file, you can use YAML syntax to include three types of information: "title", "date", and "tags". These specific details are treated as metadata and are displayed in a distinct manner, contributing to the layout of your page. The syntax looks like this:
 
