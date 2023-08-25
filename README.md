@@ -128,7 +128,7 @@ Flea expects a specific folder structure for your website content like this：
 ├── blog                  - Outer directory, included in the navigation bar
 │   ├── my-back-itches.md
 │   └── go-see-a-doctor.md
-├── about.md              - Outer file, included in the navigation bar, excluding 404.md
+├── about.md              - Outer file, included in the navigation bar (excluding 404.md)
 └── 404.md                - Used for generating the 404 page
 ```
 
@@ -148,7 +148,7 @@ Here are the available options:
 - **nav**: Accept an array of markdown-style links. By default, the nav bar is based on the file structure.
 - **footer**: Accept HTML codes, will be enclosed in `<footer></footer>` tag.
 - **disable_default_favicon**: Set true to disable the default favicon (the tiny flea icon), defaults to false.
-- **favicons**: Accept tags start with `<link rel="icon"`,it's recommended to provide icons of at least 16x16 and 32x32 sizes.
+- **favicons**: Accept tags start with `<link rel="icon"`, it's recommended to provide icons of at least 16x16 and 32x32 sizes.
 - **disable_default_style**: Set true to disable the default stylesheet, defaults to false.
 - **styles**: Accept an array of paths to local or online stylesheet files, or HTML tags start with `<link rel="stylesheet"`.
 - **scripts**: Accept an array of paths to local or online script files, or HTML tags start with `<script`.
