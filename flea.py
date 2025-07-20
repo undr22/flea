@@ -335,23 +335,23 @@ def get_parser():
             if title:
                 if title.endswith(", fit"):
                     img_html = f'<img class="fit" src="{url}" alt="{alt}" />'
-                    title = title.rstrip(", fit")
+                    title = title[: -len(", fit")]
 
                 if title.endswith(", pano"):
                     img_html = f'<img class="pano" src="{url}" alt="{alt}" />'
-                    title = title.rstrip(", pano")
+                    title = title[: -len(", pano")]
 
                 if title.endswith(", pair"):
                     img_html = f'<img class="pair_h" src="{url}" alt="{alt}" />'
-                    title = title.rstrip(", pair")
+                    title = title[: -len(", pair")]
 
                 if title.endswith(", pair_h"):
                     img_html = f'<img class="pair_h" src="{url}" alt="{alt}" />'
-                    title = title.rstrip(", pair_h")
+                    title = title[: -len(", pair_h")]
 
                 if title.endswith(", pair_v"):
                     img_html = f'<img class="pair_v" src="{url}" alt="{alt}" />'
-                    title = title.rstrip(", pair_v")
+                    title = title[: -len(", pair_v")]
 
                 img_html += f'<span class="image-title">{title}</span>'
             return img_html
