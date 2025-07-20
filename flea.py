@@ -341,6 +341,18 @@ def get_parser():
                     img_html = f'<img class="pano" src="{url}" alt="{alt}" />'
                     title = title.rstrip(", pano")
 
+                if title.endswith(", pair"):
+                    img_html = f'<img class="pair_h" src="{url}" alt="{alt}" />'
+                    title = title.rstrip(", pair")
+
+                if title.endswith(", pair_h"):
+                    img_html = f'<img class="pair_h" src="{url}" alt="{alt}" />'
+                    title = title.rstrip(", pair_h")
+
+                if title.endswith(", pair_v"):
+                    img_html = f'<img class="pair_v" src="{url}" alt="{alt}" />'
+                    title = title.rstrip(", pair_v")
+
                 img_html += f'<span class="image-title">{title}</span>'
             return img_html
 
@@ -363,7 +375,7 @@ def parse_md_file(base_html, file_path, parser, ignore_metadata=False):
     post = frontmatter.loads(read_file(file_path))
     metadata, content = post.metadata, post.content
 
-    html = base_html.replace("<!-- flea-main -->", parser(content))
+    html = base_html.replace("<!-- flea-main -->", merge_image_pairs(parser(content)))
 
     if not ignore_metadata:
         tags = metadata.get("tags", [])
@@ -389,6 +401,44 @@ def parse_md_file(base_html, file_path, parser, ignore_metadata=False):
         return html, tags, date, title
 
     return html
+
+
+def merge_image_pairs(content_html):
+    pattern = re.compile(
+        r'<p><img class="pair_h" src="([^"]+)" alt="([^"]*)" />'
+        r'<span class="image-title">([^<]*)</span></p>\s*'
+        r'<p><img class="pair_h" src="([^"]+)" alt="([^"]*)" />'
+        r'<span class="image-title">([^<]*)</span></p>'
+        r"|"
+        r'<p><img class="pair_v" src="([^"]+)" alt="([^"]*)" />'
+        r'<span class="image-title">([^<]*)</span></p>\s*'
+        r'<p><img class="pair_v" src="([^"]+)" alt="([^"]*)" />'
+        r'<span class="image-title">([^<]*)</span></p>'
+    )
+
+    def repl(match):
+        if match.group(1):  # pair_h matched
+            src1, alt1, title1 = match.group(1), match.group(2), match.group(3)
+            src2, alt2, title2 = match.group(4), match.group(5), match.group(6)
+            div_class = "pair_h"
+        else:  # pair_v matched
+            src1, alt1, title1 = match.group(7), match.group(8), match.group(9)
+            src2, alt2, title2 = match.group(10), match.group(11), match.group(12)
+            div_class = "pair_v"
+
+        alt = alt2 or alt1
+        title = title2 or title1
+        return (
+            f"<p>"
+            f'<div class="{div_class}">'
+            f'<img class="pair" src="{src1}" alt="{alt}" />'
+            f'<img class="pair" src="{src2}" alt="{alt}" />'
+            f"</div>"
+            f'<span class="image-title">{title}</span>'
+            f"</p>"
+        )
+
+    return re.sub(pattern, repl, content_html)
 
 
 def update_tags_info(tags_info, tags, page_info):

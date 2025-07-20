@@ -38,6 +38,29 @@ img.fit {
   }
 }
 
+img.pair {
+  max-height: 720px;
+  margin-bottom: 10px;
+}
+
+img.pair:last-child {
+  margin-bottom: 0;
+}
+
+@media (min-width: 1130px) {
+  div.pair_h {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  div.pair_h img.pair {
+    max-width: none;
+    max-height: 720px;
+    margin-bottom: 0;
+  }
+}
+
 span.image-title {
   display: block;
   margin: 5px 5px 0 0;
