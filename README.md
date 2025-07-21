@@ -70,29 +70,34 @@ Flea is a static website generator that aims to streamline the process of creati
 
 Flea accepts all common Markdown syntax, and additionally includes: strikethrough, footnotes, tables, task lists, mark, superscript, subscript, and more.
 
-Flea also supports a special syntax for writing image links. You can use it as follows:
+Flea also supports extended syntax for images using the `title` field to apply special display styles. **Only one special tag is allowed per image**. The following suffixes are recognized at the end of the `title`:
+
+* `, fit`: limits the image’s **display height** to avoid taking up too much space on the page.
+* `, pano`: allows the image to **extend beyond the page width**, if possible.
+* `, pair` / `, pair_h`: displays two consecutive images as a **horizontal pair**.
+* `, pair_v`: displays two consecutive images as a **vertical pair**.
+
+To enable a paired layout, **two images must appear consecutively and both must have matching `pair`-type suffixes** in their titles.
+
+Example:
 
 ```
-![alt](url "title")
+![Image 1](url1 "First image, pair")
+![Image 2](url2 "Second image, pair")
 ```
 
-The `title` will be enclosed in a `<span class="image-title"></span>` tag and rendered.
+In paired mode:
 
-And if the `title` ends with ", fit" or ", pano", the image will be rendered with a special class name, like:
+* Only **two** images are allowed per group.
+* The **second image’s `alt` and `title`** will be used for display; if missing, it falls back to the first.
 
-```
-![alt](url "title, pano")
-```
-
-It will be rendered as:
+Standalone images will render normally, with their `title` shown below the image:
 
 ```html
-<img class="pano" src="url" alt="alt" /><span class="image-title">title</span>
+<img class="fit" src="..." alt="..." /><span class="image-title">title</span>
 ```
 
-Under the default style, "fit" images will be restricted to a maximum height of 720px, "pano" images will extend beyond the page width (if possible).
-
-In the beginning of a Markdown file, you can use YAML syntax to include three types of information: "title", "date", and "tags". These specific details are treated as metadata and are displayed in a distinct manner, contributing to the layout of your page. The syntax looks like this:
+At the beginning of a Markdown file, you can use YAML front matter to include metadata: `title`, `date`, and `tags`. These are parsed and styled distinctly in the output page. Example:
 
 ```
 ---
@@ -102,7 +107,7 @@ tags: [flea, doc, animal]
 ---
 ```
 
-If you have written multiple articles within a single day and need them to be sorted correctly, you can append time info to `date`, like this:
+If you write multiple articles in one day and want them to sort precisely, you can append a timestamp:
 
 ```
 ---
@@ -110,7 +115,7 @@ date: 2023-08-10 12:00:00
 ---
 ```
 
-_Note: All `index.md` files and the `404.md` in the root of the content folder do not support metadata._
+*Note: All `index.md` files and the `404.md` in the root of the content folder do not support metadata.*
 
 ## Content Folder Structure
 
