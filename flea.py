@@ -331,6 +331,8 @@ def generate_tags_page(dst_folder_path, base_html, tags_info):
 def get_parser():
     class CustomRenderer(mistune.HTMLRenderer):
         def image(self, alt, url, title=None):
+            if not alt:
+                alt = title
             img_html = f'<img src="{url}" alt="{alt}" />'
             if title:
                 if title.endswith(", fit"):
