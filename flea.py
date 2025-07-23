@@ -71,6 +71,7 @@ def generate_base_html(src_folder_path, config, folder_list, file_list):
     base_html += generate_script_html(config)
     base_html += "</head>\n"
     base_html += "<body>\n"
+    base_html += '<div id="top"></div>\n'
     base_html += "<header>\n"
     base_html += f'<h2>{config.get("title","My Flea Site")}</h2>\n'
     base_html += generate_nav_html(src_folder_path, config, folder_list, file_list)

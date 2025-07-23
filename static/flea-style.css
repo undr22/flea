@@ -1,3 +1,14 @@
+html {
+  scroll-behavior: smooth;
+}
+
+#top {
+  position: absolute;
+  top: 0;
+  height: 0;
+  overflow: hidden;
+}
+
 body {
   max-width: 720px;
   margin: auto;
