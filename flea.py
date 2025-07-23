@@ -408,14 +408,14 @@ def parse_md_file(base_html, file_path, parser, ignore_metadata=False):
 def merge_image_pairs(content_html):
     pattern = re.compile(
         r'<p><img class="pair_h" src="([^"]+)" alt="([^"]*)" />'
-        r'<span class="image-title">([^<]*)</span></p>\s*'
+        r'<span class="image-title">((?:[^<]|<br>)*)</span></p>\s*'
         r'<p><img class="pair_h" src="([^"]+)" alt="([^"]*)" />'
-        r'<span class="image-title">([^<]*)</span></p>'
+        r'<span class="image-title">((?:[^<]|<br>)*)</span></p>'
         r"|"
         r'<p><img class="pair_v" src="([^"]+)" alt="([^"]*)" />'
-        r'<span class="image-title">([^<]*)</span></p>\s*'
+        r'<span class="image-title">((?:[^<]|<br>)*)</span></p>\s*'
         r'<p><img class="pair_v" src="([^"]+)" alt="([^"]*)" />'
-        r'<span class="image-title">([^<]*)</span></p>'
+        r'<span class="image-title">((?:[^<]|<br>)*)</span></p>'
     )
 
     def repl(match):
